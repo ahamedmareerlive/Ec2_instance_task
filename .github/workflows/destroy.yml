@@ -34,5 +34,5 @@ jobs:
         working-directory: ec2-deployment
 
       - name: Terraform Destroy
-        run: terraform destroy -var="ami_id=dummy" -var="deployment_id=${{ inputs.run_id }}" -auto-approve
+        run: terraform destroy -var="deployment_id=${{ inputs.run_id }}" -auto-approve
         working-directory: ec2-deployment
