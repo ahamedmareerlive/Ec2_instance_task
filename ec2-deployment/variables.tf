@@ -1,9 +1,11 @@
 variable "aws_region" {
-  type = string
+  type    = string
+  default = "us-east-1"
 }
 
 variable "instance_type" {
-  type = string
+  type    = string
+  default = "t2.micro"
 }
 
 variable "ami_id" {
@@ -11,12 +13,15 @@ variable "ami_id" {
 }
 
 variable "key_name" {
-  type = string
+  type    = string
+  default = "terraform-linux-key"
 }
 
 variable "subnet_id" {
-  type = string
+  type    = string
+  default = "subnet-0165c54776802caf0"
 }
+
 
 variable "vm_count" {
   type    = number
