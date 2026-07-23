@@ -1,21 +1,16 @@
-name: Deploy EC2 Instances
+name: Destroy EC2 Instance Run
 
 on:
   workflow_dispatch:
     inputs:
-      ami_id:
-        description: 'AMI ID for the EC2 Instance'
+      run_id:
+        description: 'GitHub Run ID of the deployment to destroy'
         required: true
-        type: string
-      vm_count:
-        description: 'Number of VM instances to deploy'
-        required: true
-        default: '1'
         type: string
 
 jobs:
   terraform:
-    name: Terraform Apply
+    name: Terraform Destroy
     runs-on: ubuntu-latest
     
     steps:
@@ -35,9 +30,9 @@ jobs:
           aws-region: us-east-1
 
       - name: Terraform Init
-        run: terraform init -backend-config="key=ec2/dev/terraform-${{ github.run_id }}.tfstate"
+        run: terraform init -backend-config="key=ec2/dev/terraform-${{ inputs.run_id }}.tfstate"
         working-directory: ec2-deployment
 
-      - name: Terraform Apply
-        run: terraform apply -var="ami_id=${{ inputs.ami_id }}" -var="vm_count=${{ inputs.vm_count }}" -var="deployment_id=${{ github.run_id }}" -auto-approve
+      - name: Terraform Destroy
+        run: terraform destroy -var="ami_id=dummy" -var="deployment_id=${{ inputs.run_id }}" -auto-approve
         working-directory: ec2-deployment

@@ -28,3 +28,8 @@ variable "vm_count" {
   default = 1
 }
 
+variable "deployment_id" {
+  type        = string
+  description = "Unique identifier for this deployment run to isolate resources"
+}
+

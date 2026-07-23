@@ -22,12 +22,12 @@ locals {
 }
 
 resource "aws_security_group" "web_sg" {
-  name        = "vm-sg"
+  name        = "vm-sg-${var.deployment_id}"
   description = "Allow SSH, RDP and HTTP"
   vpc_id      = data.aws_vpc.default.id
 
   tags = {
-    Name = "vm-sg"
+    Name = "vm-sg-${var.deployment_id}"
   }
 }
 
@@ -37,17 +37,17 @@ resource "tls_private_key" "generated" {
 }
 
 resource "local_file" "pem" {
-  filename        = "${path.module}/${var.key_name}.pem"
+  filename        = "${path.module}/${var.key_name}-${var.deployment_id}.pem"
   content         = tls_private_key.generated.private_key_pem
   file_permission = "0400"
 }
 
 resource "aws_key_pair" "generated" {
-  key_name   = var.key_name
+  key_name   = "${var.key_name}-${var.deployment_id}"
   public_key = tls_private_key.generated.public_key_openssh
 
   tags = {
-    Name = var.key_name
+    Name = "${var.key_name}-${var.deployment_id}"
   }
 }
 
