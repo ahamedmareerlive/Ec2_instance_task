@@ -1,0 +1,43 @@
+name: Deploy EC2 Instances
+
+on:
+  workflow_dispatch:
+    inputs:
+      ami_id:
+        description: 'AMI ID for the EC2 Instance'
+        required: true
+        type: string
+      vm_count:
+        description: 'Number of VM instances to deploy'
+        required: true
+        default: '1'
+        type: string
+
+jobs:
+  terraform:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ec2-deployment
+
+      - name: Terraform Apply
+        run: terraform apply -var="ami_id=${{ inputs.ami_id }}" -var="vm_count=${{ inputs.vm_count }}" -auto-approve
+        working-directory: ec2-deployment

@@ -1,17 +1,10 @@
 output "instance_ids" {
-
-  value = {
-    for k, v in aws_instance.linux_vm :
-    k => v.id
-  }
+  value = aws_instance.vm[*].id
 }
 
 output "public_ips" {
-
-  value = {
-    for k, v in aws_instance.linux_vm :
-    k => v.public_ip
-  }
+  value = aws_instance.vm[*].public_ip
 }
+
 
 

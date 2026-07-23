@@ -3,23 +3,31 @@ data "aws_vpc" "default" {
 }
 
 data "aws_subnets" "default" {
-
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
   }
 }
 
+data "aws_ami" "selected" {
+  filter {
+    name   = "image-id"
+    values = [var.ami_id]
+  }
+}
+
+locals {
+  is_windows = data.aws_ami.selected.platform == "windows"
+  user_data  = local.is_windows ? file("${path.module}/userdata.ps1") : file("${path.module}/userdata.sh")
+}
+
 resource "aws_security_group" "web_sg" {
-
-  name        = "linux-web-sg"
-
-  description = "Allow SSH and HTTP"
-
-  vpc_id = data.aws_vpc.default.id
+  name        = "vm-sg"
+  description = "Allow SSH, RDP and HTTP"
+  vpc_id      = data.aws_vpc.default.id
 
   tags = {
-    Name = "linux-web-sg"
+    Name = "vm-sg"
   }
 }
 
@@ -44,61 +52,54 @@ resource "aws_key_pair" "generated" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "ssh" {
-
+  count             = local.is_windows ? 0 : 1
   security_group_id = aws_security_group.web_sg.id
+  ip_protocol       = "tcp"
+  from_port         = 22
+  to_port           = 22
+  cidr_ipv4         = "0.0.0.0/0"
+}
 
-  ip_protocol = "tcp"
-
-  from_port = 22
-
-  to_port = 22
-
-  cidr_ipv4 = "0.0.0.0/0"
+resource "aws_vpc_security_group_ingress_rule" "rdp" {
+  count             = local.is_windows ? 1 : 0
+  security_group_id = aws_security_group.web_sg.id
+  ip_protocol       = "tcp"
+  from_port         = 3389
+  to_port           = 3389
+  cidr_ipv4         = "0.0.0.0/0"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "http" {
-
   security_group_id = aws_security_group.web_sg.id
-
-  ip_protocol = "tcp"
-
-  from_port = 80
-
-  to_port = 80
-
-  cidr_ipv4 = "0.0.0.0/0"
+  ip_protocol       = "tcp"
+  from_port         = 80
+  to_port           = 80
+  cidr_ipv4         = "0.0.0.0/0"
 }
 
 resource "aws_vpc_security_group_egress_rule" "all" {
-
   security_group_id = aws_security_group.web_sg.id
-
-  ip_protocol = "-1"
-
-  cidr_ipv4 = "0.0.0.0/0"
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
 }
 
-resource "aws_instance" "linux_vm" {
-
-  for_each = var.instances
-
+resource "aws_instance" "vm" {
+  count         = var.vm_count
   ami           = var.ami_id
   instance_type = var.instance_type
-
-  subnet_id = var.subnet_id
-
-  key_name = aws_key_pair.generated.key_name
+  subnet_id     = var.subnet_id
+  key_name      = aws_key_pair.generated.key_name
 
   vpc_security_group_ids = [
     aws_security_group.web_sg.id
   ]
 
   associate_public_ip_address = true
-
-  user_data = file("${path.module}/userdata.sh")
+  user_data                   = local.user_data
 
   tags = {
-    Name = each.value
+    Name = "${local.is_windows ? "Windows" : "Linux"}-VM-${count.index + 1}"
   }
 }
+
 

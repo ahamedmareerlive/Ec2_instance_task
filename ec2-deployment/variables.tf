@@ -18,11 +18,8 @@ variable "subnet_id" {
   type = string
 }
 
-variable "instances" {
-  type = map(string)
-
-  default = {
-    vm01 = "Linux-VM-01"
-    vm02 = "Linux-VM-02"
-  }
+variable "vm_count" {
+  type    = number
+  default = 1
 }
+
