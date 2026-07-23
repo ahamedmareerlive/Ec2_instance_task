@@ -17,7 +17,7 @@ graph TD
         App[ec2-deployment/ Config] -->|Stores State & Lockfile| S3
         App -->|Provisions| EC2[EC2 VM Instances]
         App -->|Provisions| SG[Security Group vm-sg]
-        App -->|Provisions| KP[SSH Key Pair]
+        App -->|Uses| KP[Existing SSH Key Pair]
     end
 ```
 
@@ -34,7 +34,7 @@ graph TD
 * **Purpose**: Configures and deploys the virtual machine instances, secure networking rules, and web server installation.
 * **Features**:
   * **OS Detection & User Data**: Auto-detects if the AMI is Windows or Linux and applies corresponding setup script ([userdata.sh](file:///d:/Ec2_instance_task/Ec2_instance_task/ec2-deployment/userdata.sh) installs Apache, [userdata.ps1](file:///d:/Ec2_instance_task/Ec2_instance_task/ec2-deployment/userdata.ps1) sets up IIS).
-  * **Private Key Generation**: Generates a high-security RSA private key on-the-fly and saves it locally as a `.pem` file for SSH/RDP access.
+  * **Key Integration**: Uses an existing SSH key pair configured in AWS for secure access.
   * **Dynamic Naming & Multi-Run Isolation**: Automatically suffixes resource names with a unique `deployment_id` (GitHub Run ID) to prevent collisions across multiple deployments.
 
 ---
@@ -82,7 +82,7 @@ Decommissions and tears down resources generated during a specific run to optimi
   * `run_id` (Required): The GitHub Run ID of the deployment you wish to destroy.
 * **Workflow Steps**:
   1. Initialises Terraform pointing to the target state file: `ec2/dev/terraform-${{ inputs.run_id }}.tfstate`.
-  2. Runs `terraform destroy` with auto-approval to terminate all associated resources (instances, keys, rules) cleanly.
+  2. Runs `terraform destroy` with auto-approval to terminate all associated resources (instances, security groups, rules) cleanly.
 
 ---
 
