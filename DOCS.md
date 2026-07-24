@@ -16,6 +16,47 @@ Here is the flow of events:
 5. **Execution**: GitHub Actions runs **Terraform**, which connects to AWS and provisions the EC2 instance, security group, and SSH key.
 6. **Isolation**: Every run is assigned a unique `deployment_id` (GitHub Run ID) so that new deployments never modify or terminate previously running instances.
 
+### System Workflow Diagram
+
+```mermaid
+graph TD
+    %% Styling
+    classDef sn fill:#81B1D3,stroke:#333,stroke-width:2px,color:#000;
+    classDef gh fill:#FDB462,stroke:#333,stroke-width:2px,color:#000;
+    classDef tf fill:#B3DE69,stroke:#333,stroke-width:2px,color:#000;
+    classDef aws fill:#BC80BD,stroke:#333,stroke-width:2px,color:#000;
+
+    subgraph SN [ServiceNow Platform]
+        A["Catalog Item Request<br/>(Inputs: ami_id, vm_count)"] --> B["Manager Approval Details"]
+        B --> C["Business Rule Triggered<br/>(After Update)"]
+        C --> D["Fetch Secure Token<br/>(github.pat.token Property)"]
+        D --> E["Execute Outbound REST call<br/>(POST Request to GitHub Workflow)"]
+    end
+
+    subgraph GH [GitHub Actions Runner]
+        E -->|API Request| F["GitHub Workflow Triggered<br/>(deploy.yml / workflow_dispatch)"]
+        F --> G["Configure AWS Credentials"]
+        G --> H["Checkout Code from Repository"]
+    end
+
+    subgraph TF [Terraform Operations]
+        H --> I["Terraform Init<br/>(Target S3 Key: ec2/dev/terraform-{run_id}.tfstate)"]
+        I --> J["Terraform Apply<br/>(Apply changes dynamically)"]
+    end
+
+    subgraph AWS [AWS Cloud Infrastructure]
+        J --> K["Provision Security Group<br/>(vm-sg-{run_id})"]
+        J --> L["Associate SSH Key Pair"]
+        J --> M["Deploy EC2 Instance(s)<br/>(t3.micro running Apache/IIS)"]
+    end
+
+    %% Apply Classes
+    class A,B,C,D,E sn;
+    class F,G,H gh;
+    class I,J tf;
+    class K,L,M aws;
+```
+
 ---
 
 ## 2. Infrastructure Code Breakdown
